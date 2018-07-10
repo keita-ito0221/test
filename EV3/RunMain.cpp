@@ -58,6 +58,7 @@ void RunMain::move(int _forward){
  *í‚é~
  */
 void RunMain::stop(){
+	fputs("stop\r\n",bt);
 	forward = 0;
 	turn = 0;
 	motor.stop();
