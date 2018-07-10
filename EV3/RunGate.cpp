@@ -65,7 +65,7 @@ void RunGate::run() {
 		case 2:
 			//50cm‚ÌŽž‚Ìƒ‚[ƒ^‚Ì‰ñ“]”‚ðŽæ“¾
 			motor.setMovedistance(50);
-			//Žw’è‚³‚ê‚½‰ñ“]”‰ñ‚é‚ÆŽ~‚Ü‚é
+			//Žw’è‚³‚ê‚½‰ñ“]”‚Æ‚ð’´‚¦‚é‚ÆŽ~‚Ü‚é
 			if(motor.getAveAngle() >= motor.getMovedistance()){
 				stop();
 				//tslp_tsk(5000);

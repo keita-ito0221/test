@@ -65,7 +65,7 @@ SonarSensor *_sonarsensor;
 Balancer balancer;
 
 
-int runmode = 1;
+int runmode = 2;
 typedef enum {
 		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
 		SEESAW_RUNMODE = 1, //シーソー
