@@ -11,7 +11,7 @@
 #define LIGHT_BLACK  0          /* 黒色の光センサ値 */
 
 extern FILE *bt;
-	
+
 class RunMain
 {
 public:

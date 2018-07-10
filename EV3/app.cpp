@@ -27,7 +27,7 @@
 #define _debug(x)
 #endif
 
-static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
+static int bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
 FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
@@ -124,6 +124,7 @@ void main_task(intptr_t unused){
 	balancer.init(GYRO_OFFSET);
 
 	ev3_led_set_color(LED_GREEN); /* スタート通知 */
+	
 
 	fprintf(bt, "runmode:%d\r\n", runmode);
 		//走行処理
@@ -158,7 +159,6 @@ void main_task(intptr_t unused){
 	*/
 	while(1){
 		if (bt_cmd == 2) break;
-		//if(int(_gyrosensor->getAngle()) >= 90 && int(_gyrosensor->getAngle()) <= -90) break;
 		runmain->run();
 	}
   
@@ -166,6 +166,7 @@ void main_task(intptr_t unused){
 
 	ter_tsk(BT_TASK);
 	ter_tsk(BLN_TASK);
+	ter_tsk(BT_LOG);
 	fclose(bt);
 
 	ext_tsk();
@@ -203,7 +204,7 @@ void bt_task(intptr_t unused){
 void bln_task(intptr_t unused){
 	//セットする値の取得
 	
-	while(1){	
+	while(1){
 		signed char pwm_L, pwm_R;
 		int32_t motor_ang_l = _motor->getAngle(_motor->left_motor);
 		int32_t motor_ang_r = _motor->getAngle(_motor->right_motor);
