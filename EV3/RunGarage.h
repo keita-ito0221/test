@@ -12,7 +12,6 @@ class RunGarage : public RunMain
 public:
 	RunGarage();
 	void run();
-	int sts;
 
 private:
 

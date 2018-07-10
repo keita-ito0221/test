@@ -24,39 +24,75 @@ RunGate::RunGate()
 /**
 *処理開始
 */
-void RunGate::run() {
-	move(10);
-	// 20cmで障害物を検知
-	/*
-	//障害物との距離を取得
-	if(sonarsensor.getDetection() <= 20){
+/*
+やりたい事
+1.超音波で障害物を検知する
 
-		fputs("sonor\r\n",bt);
-	}
-	*/
-	//while(1){
-		/*
-		//50cmの時のモータの回転数を取得
-		motor.setMovedistance(50);
-		if(getAveAngle() >= motor.getMovedistance()){
-			motor.stop();//50cm進んだら止まる
-		}
-		*/
-		if(ObstacleDetection(20)){
-			move(60);
-			fputs("1",bt);
-		}else{
-			move(-60);
-			fputs("0",bt);
-		}
-	//}
-}
+2.自立制御を切って尻尾を出す
 
-/**
-*両方のタイヤモータの角位置の平均
+3.ゲートを潜る
+
+4.自立制御を起動して走行体を半回転させる
+
+5.2->3->4                2セット
 */
-int RunGate::getAveAngle(){
-	return (motor.getAngle(motor.left_motor) + motor.getAngle(motor.right_motor)) / 2;
+void RunGate::run() {
+	while(1){
+		move(60);
+		//motor.tail_save();//尻尾を固定
+		switch(flg){
+		case 0:
+			if(ObstacleDetection(20)){//20cm以内に障害物があれば処理
+				fputs("sonar\r\n",bt);
+				ter_tsk(BLN_TASK);//バランサ停止
+				//車体が倒れないようにバランサを止めて少し前に進む
+				ev3_motor_set_power(motor.left_motor, 40);
+				ev3_motor_set_power(motor.right_motor, 40);
+				motor.tail_down(75);//尻尾を下ろす
+				//stop();
+				flg = 1;
+			}
+			break;
+		case 1:
+			fputs("reset\r\n",bt);
+			//モータの回転数の初期化
+			motor.reset(motor.left_motor);
+			motor.reset(motor.right_motor);
+			tslp_tsk(5000);
+			stop();
+			flg = 4;
+			break;			
+		case 2:
+			//50cmの時のモータの回転数を取得
+			motor.setMovedistance(50);
+			//指定された回転数回ると止まる
+			if(motor.getAveAngle() >= motor.getMovedistance()){
+				stop();
+				//tslp_tsk(5000);
+				/////////////
+				//    バランサ起動させる act_tsk(BLN_TASK); //バランサ起動
+				//   motor.tail_control();/* バランス走行用角度に制御 */
+				/////////////
+				flg = 4;
+			}
+			break;
+		case 3:
+			fputs("back\r\n",bt);
+			//50cmの時のモータの回転数を取得
+			motor.setMovedistance(50);
+			//指定された回転数回ると止まる
+			if(motor.getAveAngle() >= motor.getMovedistance()){
+				//stop();
+				flg = 4;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	stop();
+	fputs("END\r\n",bt);
+	ter_tsk(BT_LOG);
 }
 
 /**

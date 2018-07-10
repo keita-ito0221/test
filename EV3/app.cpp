@@ -65,7 +65,7 @@ SonarSensor *_sonarsensor;
 Balancer balancer;
 
 
-int runmode = 2;
+int runmode = 1;
 typedef enum {
 		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
 		SEESAW_RUNMODE = 1, //シーソー
@@ -124,6 +124,7 @@ void main_task(intptr_t unused){
 	balancer.init(GYRO_OFFSET);
 
 	ev3_led_set_color(LED_GREEN); /* スタート通知 */
+	
 
 	fprintf(bt, "runmode:%d\r\n", runmode);
 		//走行処理
@@ -131,36 +132,33 @@ void main_task(intptr_t unused){
 			case NORMAL_RUNMODE:
 				fprintf(bt, "%s\r\n", "RunNormal");
 				runmain = new RunNormal;
-				act_tsk(BLN_TASK);
 				break;
 			case SEESAW_RUNMODE:
 				fprintf(bt, "%s\r\n", "RunSeesaw");
 				runmain = new RunSeesaw;
-				act_tsk(BLN_TASK);
 				break;
 			case GATE_RUNMODE:
 				fprintf(bt, "%s\r\n", "RunGate");
 				runmain = new RunGate;
-				act_tsk(BLN_TASK);
 				break;
 			case GARAGE_RUNMODE:
 				fprintf(bt, "%s\r\n", "RunGarage");
 				runmain = new RunGarage;
-				act_tsk(BLN_TASK);
 				break;
 			default:
 				fprintf(bt, "%s\r\n", "RunMain");
 				runmain = new RunMain;
-				act_tsk(BLN_TASK);
 				break;
 		}
+	act_tsk(BLN_TASK); //バランサ起動
+	act_tsk(BT_LOG);   //ログ起動
 	
+	_motor->tail_control();/* バランス走行用角度に制御 */
 	/**
 	* Main loop for the self-balance control algorithm
 	*/
 	while(1){
 		if (bt_cmd == 2) break;
-		_motor->tail_control();/* バランス走行用角度に制御 */
 		runmain->run();
 	}
   
@@ -168,6 +166,7 @@ void main_task(intptr_t unused){
 
 	ter_tsk(BT_TASK);
 	ter_tsk(BLN_TASK);
+	ter_tsk(BT_LOG);
 	fclose(bt);
 
 	ext_tsk();
@@ -239,4 +238,23 @@ void bln_task(intptr_t unused){
 		
 		tslp_tsk(4);
 	}
+}
+
+//*****************************************************************************
+// 関数名 : bt_log
+// 引数 : unused
+// 返り値 : なし
+// 概要 : Bluetooth通信によるログを取得する。
+//*****************************************************************************
+void bt_log(intptr_t unused){
+	
+	fputs("left,right,gyro\r\n",bt);
+	while(1){
+		
+		fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
+		//fprintf(bt,"%d\r\n",int(_gyrosensor->getAngle()));
+		
+		tslp_tsk(250);
+	}
+	
 }

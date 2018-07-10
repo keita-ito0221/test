@@ -9,7 +9,6 @@
 #define TAIL_ANGLE_DRIVE      3 /* バランス走行時の角度[度] */
 #define P_GAIN             2.5F /* 完全停止用モータ制御比例係数 */
 #define PWM_ABS_MAX          60 /* 完全停止用モータ制御PWM絶対最大値 */
-
 /**
  * コンストラクタ
  */
@@ -48,6 +47,13 @@ void Motor::stop() {
 */
 int32_t Motor::getAngle(motor_port_t motor) {
 	return ev3_motor_get_counts(motor);
+}
+
+/**
+*両方のタイヤモータの角位置の平均を取得する
+*/
+int Motor::getAveAngle(){
+	return (getAngle(left_motor) + getAngle(right_motor)) / 2;
 }
 
 //*****************************************************************************

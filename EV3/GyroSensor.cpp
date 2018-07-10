@@ -22,10 +22,17 @@ void GyroSensor::init(){
 }
 
 /*
-* ŠpˆÊ’u‚ðŽæ“¾‚·‚é
+* Šp‘¬“x‚ðŽæ“¾‚·‚é
 */
 int GyroSensor::getRate() {
 	return ev3_gyro_sensor_get_rate(gyro_sensor);
+}
+
+/*
+* ŠpˆÊ’u‚ðŽæ“¾‚·‚é
+*/
+int GyroSensor::getAngle() {
+	return ev3_gyro_sensor_get_angle(gyro_sensor);
 }
 
 /*
