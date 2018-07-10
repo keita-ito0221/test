@@ -12,9 +12,12 @@ class RunGate : public RunMain
 public:
 	RunGate();
 	void run();
+	int getAveAngle();
+	int ObstacleDetection(int _distance);
+
 
 private:
-
+	int flg;
 };
 
 #endif

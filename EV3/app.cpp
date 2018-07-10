@@ -33,8 +33,6 @@ FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c3マクロ */
 #define TAIL_ANGLE_STAND_UP  87 /* 完全停止時の角度[度] */
-#define TAIL_ANGLE_DRIVE      3 /* バランス走行時の角度[度] */
-#define P_GAIN             2.5F /* 完全停止用モータ制御比例係数 */
 #define PWM_ABS_MAX          60 /* 完全停止用モータ制御PWM絶対最大値 */
 #define GYRO_OFFSET  0       /* ジャイロセンサオフセット値(角速度0[deg/sec]時) */
 /* sample_c4マクロ */
@@ -46,9 +44,6 @@ FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 #define CALIB_FONT (EV3_FONT_SMALL)
 #define CALIB_FONT_WIDTH (6/*TODO: magic number*/)
 #define CALIB_FONT_HEIGHT (8/*TODO: magic number*/)
-
-/* 関数プロトタイプ宣言 */
-static void tail_control(signed int angle);
 
 #include "RunMain.h"
 #include "RunNormal.h"
@@ -74,7 +69,7 @@ int runmode = 2;
 typedef enum {
 		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
 		SEESAW_RUNMODE = 1, //シーソー
-		GATE_RUNMODE   = 2,   //ルックアップゲート
+		GATE_RUNMODE   = 2, //ルックアップゲート
 		GARAGE_RUNMODE = 3, //車庫入れ
 	} run_mode_t;
 
@@ -165,10 +160,8 @@ void main_task(intptr_t unused){
 	*/
 	while(1){
 		if (bt_cmd == 2) break;
-		tail_control(TAIL_ANGLE_DRIVE);/* バランス走行用角度に制御 */
+		_motor->tail_control();/* バランス走行用角度に制御 */
 		runmain->run();
-
-		//tslp_tsk(4); /* 4msec周期起動 */
 	}
   
 	runmain->stop();
@@ -178,31 +171,6 @@ void main_task(intptr_t unused){
 	fclose(bt);
 
 	ext_tsk();
-}
-
-//*****************************************************************************
-// 関数名 : tail_control
-// 引数 : angle (モータ目標角度[度])
-// 返り値 : 無し
-// 概要 : 走行体完全停止用モータの角度制御
-//*****************************************************************************
-static void tail_control(signed int angle){
-
-	float pwm = (float)(angle - _motor->getAngle(_motor->tail_motor))*P_GAIN; /* 比例制御 */
-	/* PWM出力飽和処理 */
-	if (pwm > PWM_ABS_MAX){
-		pwm = PWM_ABS_MAX;
-	}
-	else if (pwm < -PWM_ABS_MAX){
-		pwm = -PWM_ABS_MAX;
-	}
-
-	if (pwm == 0){
-		ev3_motor_stop(_motor->tail_motor, true);
-	}
-	else{
-		ev3_motor_set_power(_motor->tail_motor, (signed char)pwm);
-	}
 }
 
 //*****************************************************************************
@@ -228,10 +196,12 @@ void bt_task(intptr_t unused){
 	}
 }
 
-
-/*
-バランスを制御するタスク
-*/
+//*****************************************************************************
+// 関数名 : bln_task
+// 引数 : unused
+// 返り値 : なし
+// 概要 : スタートと同時に自立制御をする。
+//*****************************************************************************
 void bln_task(intptr_t unused){
 	//セットする値の取得
 	
@@ -270,5 +240,3 @@ void bln_task(intptr_t unused){
 		tslp_tsk(4);
 	}
 }
-
-
