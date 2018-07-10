@@ -13,7 +13,7 @@ public:
 	RunGate();
 	void run();
 	int ObstacleDetection(int _distance);
-	
+
 private:
 	int flg;
 };
