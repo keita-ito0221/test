@@ -49,7 +49,7 @@ void RunGate::run() {
 				ter_tsk(BLN_TASK);								//バランサ停止
 				ev3_motor_set_power(motor.left_motor, 40); 		//車体が倒れないようにバランサを止めて少し前に進む
 				ev3_motor_set_power(motor.right_motor, 40);
-				motor.tail_down(75);							//尻尾を下ろす
+				motor.tail_down(80);							//尻尾を下ろす
 				flg = 1;
 			}
 			break;
@@ -60,28 +60,33 @@ void RunGate::run() {
 			flg = 2;
 			break;			
 		case 2:													//ゲートの通過
-			motor.setMovedistance(50);							//50cmの時のモータの回転数を取得
+			motor.setMovedistance(35);							//50cmの時のモータの回転数を取得
 			if(motor.getAveAngle() >= motor.getMovedistance()){	//指定された回転数とを超えると止まる
 				stop();											//走行体停止
-				flg = 5;
+				tslp_tsk(1000);
+				flg = 3;
 			}
 			break;
 		case 3:													//自立制御起動
-				//tslp_tsk(5000);
-				/////////////
-				//    バランサ起動させる act_tsk(BLN_TASK); //バランサ起動
-				//   motor.tail_control();/* バランス走行用角度に制御 */
-				/////////////
-			break;
-		case 4:
-			fputs("back\r\n",bt);
-			//50cmの時のモータの回転数を取得
-			motor.setMovedistance(50);
-			//指定された回転数回ると止まる
-			if(motor.getAveAngle() >= motor.getMovedistance()){
-				//stop();
-				flg = 4;
+			ev3_motor_set_power(motor.tail_motor, 100);
+			ev3_motor_set_power(motor.left_motor, -40); 		//尻尾を下げれるように止め少し後ろに下がる
+			ev3_motor_set_power(motor.right_motor, -40);
+			tslp_tsk(100);
+			stop();
+			for(int i = 0;i <= 7;i++){							//尻尾をゆっくり上げる
+				fprintf(bt,"up:%d\r\n",i);
+				motor.tail_down(3);
+				tslp_tsk(100);
 			}
+
+			/////////////
+			//    バランサ起動させる act_tsk(BLN_TASK); //バランサ起動
+			//   motor.tail_control();/* バランス走行用角度に制御 */
+			/////////////
+			flg = 4;
+			break;
+		case 4:													//走行体を半回転
+			flg = 5;
 			break;
 		default:
 			break;
@@ -89,7 +94,7 @@ void RunGate::run() {
 		if(flg <= 5) break;
 
 	}
-	stop();
+	//stop();
 	ter_tsk(BT_LOG);
 }
 
