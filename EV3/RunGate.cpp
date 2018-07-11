@@ -14,12 +14,21 @@ SonarSensor sonarsensor;
 #include "Motor.h"
 extern Motor motor;
 
+#define STS_GATE_DETE	0 //障害物のゲートを検知
+#define STS_GATE_TILT	1 //ゲートを潜れる高さまで走行体を下げる
+#define STS_GATE_RESE	2 //タイヤモータの角位置をリセット
+#define STS_GATE_PASS	3 //ゲート通過
+#define STS_GATE_VERT	4 //走行体を垂直に近づける
+#define STS_GATE_TURN	5 //走行体を回転させる
+#define STS_GATE_FINI	6 //走行体を停止させる
+
 /**
  * コンストラクタ
  */
 RunGate::RunGate()
 {
 	flg = 0;
+	sts = 0;
 }
 
 /**
@@ -33,17 +42,17 @@ RunGate::RunGate()
 
 3.ゲートを通過する             成功
 
-4.自立制御を起動する
+4.走行体を垂直にする           成功
 
-5.走行体を半回転させる
+5.走行体を半回転させる         未完成
 
 6.2->3->4->5                2セット
 */
 void RunGate::run() {
 	while(1){
 		move(60);
-		switch(flg){
-		case 0:                                                 //障害物
+		switch(sts){
+		case STS_GATE_DETE:                                     //障害物
 			if(ObstacleDetection(20)){                          //20cm以内に障害物があれば処理
 				fputs("sonar\r\n",bt);
 				ter_tsk(BLN_TASK);                              //バランサ停止
@@ -51,60 +60,71 @@ void RunGate::run() {
 				ev3_motor_set_power(motor.right_motor, 40);
 				motor.tail_down(80);                            //尻尾を下ろす
 				stop();                                         //走行体停止
-				flg = 1;
+				sts = STS_GATE_TILT;
 			}
 			break;
-		case 1:                                                 //走行体を傾ける
+			
+		case STS_GATE_TILT:                                     //走行体を傾ける
+			fputs("tilt\r\n",bt);
 			while(int(motor.getAngle(motor.tail_motor)) >= 65){ //尻尾を65になるまで上げる
 				motor.tail_up(-1);                              //尻尾を上げる
 				tslp_tsk(10);
 			}
-			flg = 2;
+			sts = STS_GATE_RESE;
 			break;
-		case 2:                                                 //モータのリセット
+			
+		case STS_GATE_RESE:                                     //モータのリセット
 			fputs("reset\r\n",bt);
 			motor.reset(motor.left_motor);                      //モータの回転数の初期化
 			motor.reset(motor.right_motor);
 			ev3_motor_set_power(motor.left_motor, 40);          //前に進む
 			ev3_motor_set_power(motor.right_motor, 40);
-			flg = 3;
+			sts = STS_GATE_PASS;
 			break;
-		case 3:                                                 //ゲートの通過
+			
+		case STS_GATE_PASS:                                     //ゲートの通過
+			fputs("pass\r\n",bt);
 			motor.setMovedistance(35);                          //35cmの時のモータの回転数を取得
 			if(motor.getAveAngle() >= motor.getMovedistance()){ //指定された回転数とを超えると止まる
 				stop();                                         //走行体停止
 				tslp_tsk(1000);
-				flg = 4;
+				sts = STS_GATE_VERT;
 			}
 			break;
-		case 4:                                                 //走行体を垂直に近づける
+			
+		case STS_GATE_VERT:                                     //走行体を垂直に近づける
+			fputs("vert\r\n",bt);
 			ev3_motor_set_power(motor.left_motor, -40);         //尻尾を下げれるように止め少し後ろに下がる
 			ev3_motor_set_power(motor.right_motor, -40);
-			tslp_tsk(125);
+			tslp_tsk(120);
 			stop();                                             //走行体停止
 			while(int(motor.getAngle(motor.tail_motor)) <= 80){ //尻尾を80になるまで下げる
-				fprintf(bt,"down:%d\r\n",i);
 				motor.tail_down(1);                             //尻尾をゆっくり下げる
 				tslp_tsk(10);
 			}
 			tslp_tsk(1000);
-			flg = 5;
+			flg++;
+			if(flg == 3){
+				sts = STS_GATE_FINI;                            //終了
+			}else{
+				sts = STS_GATE_TURN;                           
+			}
 			break;
-		case 5:                                                 //走行体を半回転
-			ev3_motor_set_power(motor.left_motor, 10);          //回転
+			
+		case STS_GATE_TURN:                                     //走行体を半回転
+			fputs("turn\r\n",bt);
+			ev3_motor_set_power(motor.left_motor, 10);          //半回転
 			ev3_motor_set_power(motor.right_motor, -10);
 			tslp_tsk(2800);
-			flg = 1;
+			sts = STS_GATE_TILT;                                //走行体を傾ける
 			break;
-		case 6:                                                 //終了
+			
+		case STS_GATE_FINI:                                     //終了
+			fputs("finish\r\n",bt);
 			stop_flg = 1;                                       //stop_flgをapp.cppに渡す 1:終了
 			break;
+			
 		default:
-			break;
-		}
-		
-		if(flg >= 6){                                           //終了
-			stop_flg = 1;                                       //stop_flgをapp.cppに渡す 1:終了
 			break;
 		}
 	}
