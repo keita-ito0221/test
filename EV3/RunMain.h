@@ -29,6 +29,7 @@ public:
 	int gyro, volt;
 	int32_t motor_ang_l, motor_ang_r;
 	float target;
+	int stop_flg;///////////////
 
 private:
 

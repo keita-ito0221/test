@@ -21,6 +21,7 @@ RunMain::RunMain()
 {
 	target = (LIGHT_WHITE + LIGHT_BLACK)/2;
 	pid = new PID();
+	stop_flg = 0;
 }
 
 
