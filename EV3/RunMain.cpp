@@ -21,6 +21,7 @@ RunMain::RunMain()
 {
 	target = (LIGHT_WHITE + LIGHT_BLACK)/2;
 	pid = new PID();
+	stop_flg = 0;
 }
 
 
@@ -58,6 +59,7 @@ void RunMain::move(int _forward){
  *í‚é~
  */
 void RunMain::stop(){
+	fputs("stop\r\n",bt);
 	forward = 0;
 	turn = 0;
 	motor.stop();

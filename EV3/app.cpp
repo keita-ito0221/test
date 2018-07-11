@@ -27,7 +27,7 @@
 #define _debug(x)
 #endif
 
-static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
+static int bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
 FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
@@ -158,7 +158,7 @@ void main_task(intptr_t unused){
 	* Main loop for the self-balance control algorithm
 	*/
 	while(1){
-		if (bt_cmd == 2) break;
+		if (bt_cmd == 2 || runmain->stop_flg == 1) break;
 		runmain->run();
 	}
   
