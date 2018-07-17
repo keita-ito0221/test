@@ -56,6 +56,14 @@ int Motor::getAveAngle(){
 	return (getAngle(left_motor) + getAngle(right_motor)) / 2;
 }
 
+/**
+*両方のタイヤモータのターンの角位置を取得する
+*/
+int Motor::getTurnAngle(motor_port_t f_motor, motor_port_t b_motor){
+	return (getAngle(f_motor) - getAngle(b_motor));
+}
+
+
 //*****************************************************************************
 // 関数名 : tail_control
 // 引数 : angle (モータ目標角度[度])

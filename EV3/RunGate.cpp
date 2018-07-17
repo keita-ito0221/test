@@ -14,6 +14,9 @@ SonarSensor sonarsensor;
 #include "Motor.h"
 extern Motor motor;
 
+#define PASS            35//ゲートの通過距離
+#define TURN            51//ターンの距離
+
 #define STS_GATE_DETE	0 //障害物のゲートを検知
 #define STS_GATE_TILT	1 //ゲートを潜れる高さまで走行体を下げる
 #define STS_GATE_RESE	2 //タイヤモータの角位置をリセット
@@ -40,20 +43,20 @@ RunGate::RunGate()
 
 2.自立制御を切って尻尾を出す   成功
 
-3.ゲートを通過する             成功
+3.ゲートを通過する             成功  距離要調整
 
 4.走行体を垂直にする           成功
 
-5.走行体を半回転させる         未完成
+5.走行体を半回転させる         成功
 
 6.2->3->4->5                2セット
 */
 void RunGate::run() {
 	while(1){
-		move(60);
 		switch(sts){
-		case STS_GATE_DETE:                                     //障害物
-			if(ObstacleDetection(20)){                          //20cm以内に障害物があれば処理
+		case STS_GATE_DETE:                                     /**障害物**/
+			move(60);
+			if(ObstacleDetection(10)){                          //20cm以内に障害物があれば処理
 				fputs("sonar\r\n",bt);
 				ter_tsk(BLN_TASK);                              //バランサ停止
 				ev3_motor_set_power(motor.left_motor, 40);      //車体が倒れないようにバランサを止めて少し前に進む
@@ -64,27 +67,27 @@ void RunGate::run() {
 			}
 			break;
 			
-		case STS_GATE_TILT:                                     //走行体を傾ける
+		case STS_GATE_TILT:                                     /**走行体を傾ける**/
 			fputs("tilt\r\n",bt);
-			while(int(motor.getAngle(motor.tail_motor)) >= 65){ //尻尾を65になるまで上げる
+			while(motor.getAngle(motor.tail_motor) >= 65){      //尻尾を65になるまで上げる
 				motor.tail_up(-1);                              //尻尾を上げる
 				tslp_tsk(10);
 			}
 			sts = STS_GATE_RESE;
 			break;
 			
-		case STS_GATE_RESE:                                     //モータのリセット
+		case STS_GATE_RESE:                                     /**モータのリセット**/
 			fputs("reset\r\n",bt);
 			motor.reset(motor.left_motor);                      //モータの回転数の初期化
 			motor.reset(motor.right_motor);
-			ev3_motor_set_power(motor.left_motor, 40);          //前に進む
-			ev3_motor_set_power(motor.right_motor, 40);
+			ev3_motor_set_power(motor.left_motor, 20);          //前に進む
+			ev3_motor_set_power(motor.right_motor, 20);
 			sts = STS_GATE_PASS;
 			break;
 			
-		case STS_GATE_PASS:                                     //ゲートの通過
+		case STS_GATE_PASS:                                     /**ゲートの通過**/
 			fputs("pass\r\n",bt);
-			motor.setMovedistance(35);                          //35cmの時のモータの回転数を取得
+			motor.setMovedistance(PASS);                        //35cmの時のモータの回転数を取得
 			if(motor.getAveAngle() >= motor.getMovedistance()){ //指定された回転数とを超えると止まる
 				stop();                                         //走行体停止
 				tslp_tsk(1000);
@@ -92,39 +95,41 @@ void RunGate::run() {
 			}
 			break;
 			
-		case STS_GATE_VERT:                                     //走行体を垂直に近づける
+		case STS_GATE_VERT:                                     /**走行体を垂直に近づける**/
 			fputs("vert\r\n",bt);
 			ev3_motor_set_power(motor.left_motor, -40);         //尻尾を下げれるように止め少し後ろに下がる
 			ev3_motor_set_power(motor.right_motor, -40);
 			tslp_tsk(120);
 			stop();                                             //走行体停止
-			while(int(motor.getAngle(motor.tail_motor)) <= 80){ //尻尾を80になるまで下げる
+			while(motor.getAngle(motor.tail_motor) <= 80){      //尻尾を80になるまで下げる
 				motor.tail_down(1);                             //尻尾をゆっくり下げる
 				tslp_tsk(10);
 			}
 			tslp_tsk(1000);
 			flg++;
 			if(flg == 3){
-				sts = STS_GATE_FINI;                            //終了
+				sts = STS_GATE_FINI;                            //3回、回ったら終了
 			}else{
-				sts = STS_GATE_TURN;                           
+				sts = STS_GATE_TURN;
+				motor.reset(motor.left_motor);                  //モータの回転数の初期化
+				motor.reset(motor.right_motor);
 			}
 			break;
 			
-		case STS_GATE_TURN:                                     //走行体を半回転
+		case STS_GATE_TURN:                                     /**走行体を半回転**/
 			fputs("turn\r\n",bt);
 			ev3_motor_set_power(motor.left_motor, 10);          //半回転
 			ev3_motor_set_power(motor.right_motor, -10);
-			tslp_tsk(2800);
-			sts = STS_GATE_TILT;                                //走行体を傾ける
+			motor.setMovedistance(TURN);                        //ターンするときの回転数を取得
+			if(motor.getTurnAngle(motor.left_motor,motor.right_motor) >= motor.getMovedistance()){//半回転したら入る
+				stop();                                         //走行体停止
+				sts = STS_GATE_TILT;                            //走行体を傾ける
+			}
 			break;
-			
-		case STS_GATE_FINI:                                     //終了
+		}
+		if(sts == STS_GATE_FINI){                               //終了
 			fputs("finish\r\n",bt);
 			stop_flg = 1;                                       //stop_flgをapp.cppに渡す 1:終了
-			break;
-			
-		default:
 			break;
 		}
 	}

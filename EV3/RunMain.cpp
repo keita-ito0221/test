@@ -37,8 +37,12 @@ void RunMain::run() {
  *‰ñ“]—Ê‚ðŽæ“¾‚·‚é
  */
 int RunMain::getTurn(){
-	int diff = target - colorsensor.getReflect();
-	return pid->calcControllValue(diff);
+	if(colorsensor.getReflect() <= 200){
+		int diff = target - colorsensor.getReflect();
+		return pid->calcControllValue(diff);
+	}else{
+		stop();
+	}
 }
 
 /*
