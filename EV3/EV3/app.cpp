@@ -248,11 +248,13 @@ void bln_task(intptr_t unused){
 //*****************************************************************************
 void bt_log(intptr_t unused){
 	
-	fputs("left,right,gyro\r\n",bt);
+	fputs("mV, mA\r\n",bt);
 	while(1){
 		
-		fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
-		//fprintf(bt,"%d\r\n",int(_gyrosensor->getAngle()));
+		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
+		fprintf(bt,"%d,",ev3_battery_voltage_mV());
+		fprintf(bt,"%d\r\n",ev3_battery_current_mA());
+		
 		
 		tslp_tsk(250);
 	}
