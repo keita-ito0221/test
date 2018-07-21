@@ -11,7 +11,7 @@
 #define LIGHT_BLACK  0          /* 黒色の光センサ値 */
 
 extern FILE *bt;
-	
+
 class RunMain
 {
 public:
@@ -29,6 +29,7 @@ public:
 	int gyro, volt;
 	int32_t motor_ang_l, motor_ang_r;
 	float target;
+	int stop_flg;
 
 private:
 

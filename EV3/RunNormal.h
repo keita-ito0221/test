@@ -14,9 +14,12 @@ class RunNormal : public RunMain
 public:
 	RunNormal();
 	void run();
-
+	void R_Course_Run();
+	void L_Course_Run();
+	
 private:
-
+	int sts;
+	int speed;
 };
 
 #endif
