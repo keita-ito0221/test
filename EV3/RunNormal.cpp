@@ -6,7 +6,7 @@
 #include "RunNormal.h"
 #include "RunMain.h"
 #include "ev3api.h"
-
+#include "app.h"
 extern FILE *bt;
 
 #define R_COURSE 1 //Rコース
@@ -19,6 +19,7 @@ RunNormal::RunNormal(int bt_cmd)
 {
 	sts = 0;
 	speed = 70;
+	
 	if(bt_cmd == 3){
 		course = R_COURSE;
 	}
@@ -36,7 +37,7 @@ void RunNormal::run() {
 	if(course == R_COURSE){
 		R_Course_Run();
 	}
-	else if(course == LCOURSE){
+	else if(course == L_COURSE){
 		L_Course_Run();
 	}
 }
@@ -79,8 +80,9 @@ void RunNormal::R_Course_Run(){
 			break;
 		case 9:
 			//シーソーモードに切り替わる
-			runmain =  SEESAW_RUNMODE;
+			runmode =  SEESAW_RUNMODE;
 			break;
+		}
 	}
 }
 
@@ -121,7 +123,8 @@ void RunNormal::L_Course_Run(){
 			break;
 		case 9:
 			//ゲートモードに切り替わる
-			runmain = GATE_RUNMODE;
+			runmode = GATE_RUNMODE;
 		break;
+		}
 	}
 }
