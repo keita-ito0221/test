@@ -15,7 +15,6 @@ public:
 	void stop();
 	int32_t getAngle(motor_port_t);
 	int getAveAngle();
-	int getTurnAngle(motor_port_t f_motor, motor_port_t b_motor);
 	void setMovedistance(int _movedistance);
 	int getMovedistance();
 	void tail_control();

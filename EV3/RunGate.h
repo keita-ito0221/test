@@ -16,7 +16,6 @@ public:
 
 private:
 	int flg;
-	int sts;
 };
 
 #endif

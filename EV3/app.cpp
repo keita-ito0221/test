@@ -27,7 +27,7 @@
 #define _debug(x)
 #endif
 
-static int bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
+static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
 FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
@@ -65,7 +65,7 @@ SonarSensor *_sonarsensor;
 Balancer balancer;
 
 
-int runmode = 2;
+int runmode = 0;
 typedef enum {
 		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
 		SEESAW_RUNMODE = 1, //シーソー
@@ -150,15 +150,15 @@ void main_task(intptr_t unused){
 				runmain = new RunMain;
 				break;
 		}
+	_motor->tail_control();/* バランス走行用角度に制御*/
 	act_tsk(BLN_TASK); //バランサ起動
 	act_tsk(BT_LOG);   //ログ起動
 	
-	_motor->tail_control();/* バランス走行用角度に制御 */
 	/**
 	* Main loop for the self-balance control algorithm
 	*/
 	while(1){
-		if (bt_cmd == 2 || runmain->stop_flg == 1) break;
+		if (bt_cmd == 2) break;
 		runmain->run();
 	}
   
@@ -210,7 +210,7 @@ void bln_task(intptr_t unused){
 		int32_t motor_ang_r = _motor->getAngle(_motor->right_motor);
 		int gyro = _gyrosensor->getRate();
 		int volt = ev3_battery_voltage_mV();
-		int turn = 0;//runmain->getTurn();
+		int turn = runmain->getTurn();
 		int forward = runmain->getForward();
 		
 		//バランサーに値のセット。回転量の取得
@@ -248,11 +248,15 @@ void bln_task(intptr_t unused){
 //*****************************************************************************
 void bt_log(intptr_t unused){
 	
-	fputs("left,right,tail\r\n",bt);
+	//fputs("mV, mA, reflect\r\n",bt);
 	while(1){
 		
-		fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
+		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
+		//fprintf(bt,"%d,",ev3_battery_voltage_mV());
+		//fprintf(bt,"%d,",ev3_battery_current_mA());
+		fprintf(bt,"%d\r\n",ev3_color_sensor_get_reflect(_colorsensor->color_sensor));
 		
 		tslp_tsk(250);
 	}
+	
 }

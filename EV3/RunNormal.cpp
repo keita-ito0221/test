@@ -20,6 +20,6 @@ RunNormal::RunNormal()
 *ˆ—ŠJn
 */
 void RunNormal::run() {
-	move(30);
+	move(60);
 }
 

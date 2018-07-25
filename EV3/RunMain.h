@@ -9,6 +9,11 @@
 //#define GYRO_OFFSET  0       /* ジャイロセンサオフセット値(角速度0[deg/sec]時) */
 #define LIGHT_WHITE  55         /* 白色の光センサ値 */
 #define LIGHT_BLACK  0          /* 黒色の光センサ値 */
+#define LIGHT_GRAY   40         /* 灰色の光センサ値 */
+
+#define MODE_BLACK	0		/* 黒色のライントレース */
+#define MODE_GRAY	1		/* 灰色のライントレース */
+
 
 extern FILE *bt;
 
@@ -29,7 +34,15 @@ public:
 	int gyro, volt;
 	int32_t motor_ang_l, motor_ang_r;
 	float target;
-	int stop_flg;
+	
+	int colorlist[10];
+	int cnt;
+	bool flg;
+	
+	void find_gray(int color);
+	int trace_mode = MODE_BLACK;	//スタート直後のモード
+	int line_color;					//どの色のライン上をトレースするか
+	float setTarget();				//トレース目標値設定
 
 private:
 
