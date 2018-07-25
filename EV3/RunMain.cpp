@@ -64,12 +64,12 @@ int RunMain::getTurn(){
 	fprintf(bt, "%d\r\n", cnt);*/
 	
 	fprintf(bt, "%d,%d\r\n", color,cnt);
-	if(cnt>=30){
+	if(cnt>=40){
 		cnt = 0;
 	}
 	
-	if((cnt > 0) && (cnt % 3 == 0)){
-		colorlist[cnt/3] = color;
+	if((cnt > 0) && (cnt % 4 == 0)){
+		colorlist[cnt/4] = color;
 	    find_gray(color);
 	}
 	
@@ -87,22 +87,25 @@ void RunMain::find_gray(int color){
 	
 	//灰色の閾値を設定
 	//取得した色の値を配列に格納する
-	for(int i=0;i<10;i++){
+	for(int i=0;i<6;i++){
 		if((colorlist[i]>=20) && (colorlist[i]<=40)){
 			graycnt++;
+		}
+		else{
+			line_color = MODE_BLACK;
 		}
 	}
 	
 	//配列の中に8つ灰色の値があれば灰色のライン上にいるとする
-	if(graycnt >= 8){
-		ev3_speaker_play_tone(NOTE_F6, 1000);
+	if(graycnt >= 5){
+		ev3_speaker_play_tone(NOTE_C4, 1000);
 		line_color = MODE_GRAY;
 	}
 	
 	//黒色を検知したらMODE_BLACKに切り替える
-	if((color > 0) && (color < 10)){
+	/*if((color > 0) && (color < 10)){
 		line_color = MODE_BLACK;
-	}
+	}*/
 	
 	//fprintf(bt, "%s\r\n", "graycnt");
 	//fprintf(bt, "%d\r\n", graycnt);
