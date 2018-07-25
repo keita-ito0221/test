@@ -36,12 +36,13 @@ RunMain::RunMain()
 targetの値を取得する
 */
 float RunMain::setTarget(){
-	if(trace_mode == MODE_BLACK){
+	if(line_color == MODE_BLACK){
 		target = (LIGHT_WHITE + LIGHT_BLACK)/2;
 	}
 	else{
 		target = (LIGHT_WHITE + LIGHT_GRAY)/2;
 	}
+	fprintf(bt, "%d\r\n", line_color);
 	return target;
 }
 
@@ -63,12 +64,12 @@ int RunMain::getTurn(){
 	fprintf(bt, "%d\r\n", cnt);*/
 	
 	fprintf(bt, "%d,%d\r\n", color,cnt);
-	if(cnt>=40){
+	if(cnt>=30){
 		cnt = 0;
 	}
 	
-	if((cnt > 0) && (cnt % 4 == 0)){
-		colorlist[cnt/4] = color;
+	if((cnt > 0) && (cnt % 3 == 0)){
+		colorlist[cnt/3] = color;
 	    find_gray(color);
 	}
 	
@@ -87,7 +88,7 @@ void RunMain::find_gray(int color){
 	//灰色の閾値を設定
 	//取得した色の値を配列に格納する
 	for(int i=0;i<10;i++){
-		if((colorlist[i]>=30) && (colorlist[i]<=45)){
+		if((colorlist[i]>=20) && (colorlist[i]<=40)){
 			graycnt++;
 		}
 	}
