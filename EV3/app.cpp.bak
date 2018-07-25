@@ -252,22 +252,10 @@ void bln_task(intptr_t unused){
 void bt_log(intptr_t unused){
 	
 	fputs("left,right,tail\r\n",bt);
-static int gyro = 0;
 	while(1){
-		gyro += _gyrosensor->getRate();
+		
 		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
 		fprintf(bt,"%d\r\n",_colorsensor->getReflect());
-		
-		if(gyro / 20 >= 70 || gyro / 20 <= -70){
-			fprintf(bt, "%s\r\n", "stop");
-			_motor->stop();
-			ter_tsk(BT_TASK);
-			ter_tsk(MAIN_TASK);
-			ter_tsk(BLN_TASK);
-			ext_tsk();
-		}
-		
-		
-		tslp_tsk(50);
+		tslp_tsk(250);
 	}
 }

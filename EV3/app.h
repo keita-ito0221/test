@@ -84,10 +84,18 @@ extern "C" {
 extern void main_task(intptr_t exinf);
 extern void bt_task(intptr_t exinf);
 extern void bln_task(intptr_t exinf);
-
+extern void bt_log(intptr_t exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
 
 #ifdef __cplusplus
 }
 #endif
+
+extern int runmode;
+typedef enum {
+		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
+		SEESAW_RUNMODE = 1, //シーソー
+		GATE_RUNMODE   = 2, //ルックアップゲート
+		GARAGE_RUNMODE = 3, //車庫入れ
+	} run_mode_t;

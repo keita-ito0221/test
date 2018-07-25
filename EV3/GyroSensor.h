@@ -12,6 +12,7 @@ public:
 	GyroSensor();
 	void init();
 	int getRate();
+	int getAngle();
 	void reset();
 
 	static const sensor_port_t
