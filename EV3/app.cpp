@@ -64,14 +64,11 @@ SonarSensor *_sonarsensor;
 #include "BalancerCpp.h" 
 Balancer balancer;
 
+//走行を終了する判定フラグ
+bool is_finished = false;   //シーソー、ガレージが終了すればtrueになる。
+bool is_error    = false;   //続行不可
 
-int runmode = 2;
-typedef enum {
-		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
-		SEESAW_RUNMODE = 1, //シーソー
-		GATE_RUNMODE   = 2, //ルックアップゲート
-		GARAGE_RUNMODE = 3, //車庫入れ
-	} run_mode_t;
+int runmode = 0;
 
 /* メインタスク */
 void main_task(intptr_t unused){
@@ -126,12 +123,21 @@ void main_task(intptr_t unused){
 	ev3_led_set_color(LED_GREEN); /* スタート通知 */
 	
 
-	fprintf(bt, "runmode:%d\r\n", runmode);
+
+	act_tsk(BLN_TASK); //バランサ起動
+	act_tsk(BT_LOG);   //ログ起動
+	
+	_motor->tail_control();/* バランス走行用角度に制御 */
+	/**
+	* Main loop for the self-balance control algorithm
+	*/
+	while(!is_finished && !is_error){
+		if (bt_cmd == 2 || runmain->stop_flg == 1) break;
 		//走行処理
 		switch (runmode) {
 			case NORMAL_RUNMODE:
 				fprintf(bt, "%s\r\n", "RunNormal");
-				runmain = new RunNormal;
+				runmain = new RunNormal(bt_cmd);
 				break;
 			case SEESAW_RUNMODE:
 				fprintf(bt, "%s\r\n", "RunSeesaw");
@@ -150,15 +156,6 @@ void main_task(intptr_t unused){
 				runmain = new RunMain;
 				break;
 		}
-	act_tsk(BLN_TASK); //バランサ起動
-	act_tsk(BT_LOG);   //ログ起動
-	
-	_motor->tail_control();/* バランス走行用角度に制御 */
-	/**
-	* Main loop for the self-balance control algorithm
-	*/
-	while(1){
-		if (bt_cmd == 2 || runmain->stop_flg == 1) break;
 		runmain->run();
 	}
   
@@ -189,6 +186,12 @@ void bt_task(intptr_t unused){
 			case '2':
 				bt_cmd = 2;
 				break;
+			case 'r':
+				bt_cmd = 3;
+				break;
+			case 'l':
+				bt_cmd = 4;
+				break;
 		default:
 				break;
 		}
@@ -210,7 +213,7 @@ void bln_task(intptr_t unused){
 		int32_t motor_ang_r = _motor->getAngle(_motor->right_motor);
 		int gyro = _gyrosensor->getRate();
 		int volt = ev3_battery_voltage_mV();
-		int turn = 0;//runmain->getTurn();
+		int turn = runmain->getTurn();
 		int forward = runmain->getForward();
 		
 		//バランサーに値のセット。回転量の取得
@@ -248,13 +251,23 @@ void bln_task(intptr_t unused){
 //*****************************************************************************
 void bt_log(intptr_t unused){
 	
-	fputs("left,right,gyro\r\n",bt);
+	fputs("left,right,tail\r\n",bt);
+static int gyro = 0;
 	while(1){
+		gyro += _gyrosensor->getRate();
+		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
+		fprintf(bt,"%d\r\n",_colorsensor->getReflect());
 		
-		fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
-		//fprintf(bt,"%d\r\n",int(_gyrosensor->getAngle()));
+		if(gyro / 20 >= 70 || gyro / 20 <= -70){
+			fprintf(bt, "%s\r\n", "stop");
+			_motor->stop();
+			ter_tsk(BT_TASK);
+			ter_tsk(MAIN_TASK);
+			ter_tsk(BLN_TASK);
+			ext_tsk();
+		}
 		
-		tslp_tsk(250);
+		
+		tslp_tsk(50);
 	}
-	
 }

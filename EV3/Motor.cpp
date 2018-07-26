@@ -49,12 +49,27 @@ int32_t Motor::getAngle(motor_port_t motor) {
 	return ev3_motor_get_counts(motor);
 }
 
+/*
+ * モータのパワーを取得する
+ */
+int Motor::getPower(motor_port_t motor){
+	return ev3_motor_get_power(motor);
+}
+
 /**
 *両方のタイヤモータの角位置の平均を取得する
 */
 int Motor::getAveAngle(){
 	return (getAngle(left_motor) + getAngle(right_motor)) / 2;
 }
+
+/**
+*両方のタイヤモータのターンの角位置を取得する
+*/
+int Motor::getTurnAngle(motor_port_t f_motor, motor_port_t b_motor){
+	return (getAngle(f_motor) - getAngle(b_motor));
+}
+
 
 //*****************************************************************************
 // 関数名 : tail_control
@@ -99,6 +114,13 @@ void Motor::tail_down(int down) {
 */
 void Motor::tail_save() {
 	ev3_motor_rotate(tail_motor, 0, PWM_ABS_MAX, true);
+}
+
+/*
+ *タイヤを指定した角度回転させる
+ */
+void Motor::rotate(motor_port_t motor ,uint32_t degrees, int power) {
+	ev3_motor_rotate(motor, degrees, power, true);
 }
 
 /*

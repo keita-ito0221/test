@@ -97,3 +97,7 @@ int8_t Balancer::getPwmRight() {
 int8_t Balancer::getPwmLeft() {
   return mLeftPwm;
 }
+void Balancer::setOffset(int offset){
+  mOffset = offset;
+
+}

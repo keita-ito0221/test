@@ -20,6 +20,7 @@ public:
   void setCommand(int forward, int turn);
   int8_t getPwmRight();
   int8_t getPwmLeft();
+  void setOffset(int offset);
 
 private:
   int mForward;
