@@ -35,6 +35,13 @@ RunGate::RunGate()
 }
 
 /**
+ * デストラクタ
+ */
+RunGate::~RunGate()
+{
+}
+
+/**
 *処理開始
 */
 /*
@@ -129,7 +136,6 @@ void RunGate::run() {
 		}
 		if(sts == STS_GATE_FINI){                               //終了
 			fputs("finish\r\n",bt);
-			//stop_flg = 1;                                       //stop_flgをapp.cppに渡す 1:終了
 			runmode = GARAGE_RUNMODE;
 			break;
 		}

@@ -98,4 +98,5 @@ typedef enum {
 		SEESAW_RUNMODE = 1, //シーソー
 		GATE_RUNMODE   = 2, //ルックアップゲート
 		GARAGE_RUNMODE = 3, //車庫入れ
+		NO_RUNMODE     = 99, //未走行状態
 	} run_mode_t;

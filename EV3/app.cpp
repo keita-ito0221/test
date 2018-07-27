@@ -50,7 +50,7 @@ FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 #include "RunGarage.h"
 #include "RunGate.h"
 #include "RunSeesaw.h"
-RunMain *runmain;
+RunMain *runmain = NULL;
 #include "Motor.h"
 Motor *_motor;
 #include "GyroSensor.h"
@@ -68,11 +68,14 @@ Balancer balancer;
 bool is_finished = false;   //シーソー、ガレージが終了すればtrueになる。
 bool is_error    = false;   //続行不可
 
-int runmode = 0;
+int runmode = NORMAL_RUNMODE;
 
 /* メインタスク */
 void main_task(intptr_t unused){
 
+	int runmode_backup = NO_RUNMODE;     
+	int course_mode = R_COURSE;
+	
 	/* LCD画面表示 */
 	ev3_lcd_fill_rect(0, 0, EV3_LCD_WIDTH, EV3_LCD_HEIGHT, EV3_LCD_WHITE);
 	ev3_lcd_draw_string("EV3way-ET sample_cpp4", 0, CALIB_FONT_HEIGHT*1);
@@ -101,11 +104,17 @@ void main_task(intptr_t unused){
 	//ev3_lcd_draw_string("尻尾処理前", 0, CALIB_FONT_HEIGHT*1);
 	/* スタート待機 */
 	while(1){
-		ev3_lcd_draw_string("          ", 0, CALIB_FONT_HEIGHT*1);
+		ev3_lcd_draw_string("                       ", 0, CALIB_FONT_HEIGHT*1);
 		ev3_lcd_draw_string("ready", 0, CALIB_FONT_HEIGHT*1);
 		//tail_control(TAIL_ANGLE_STAND_UP); /* 完全停止用角度に制御 */
 
-		if (bt_cmd == 1){
+		if (bt_cmd == 3){
+			course_mode = R_COURSE;
+			ev3_lcd_draw_string(" COURSE:Right     ", 5, CALIB_FONT_HEIGHT*1);
+		} else if (bt_cmd == 4){
+			course_mode = L_COURSE;
+			ev3_lcd_draw_string(" COURSE:Left      ", 5, CALIB_FONT_HEIGHT*1);
+		} else if (bt_cmd == 1){
 			break; /* リモートスタート */
 		}
 
@@ -122,44 +131,52 @@ void main_task(intptr_t unused){
 
 	ev3_led_set_color(LED_GREEN); /* スタート通知 */
 	
-
-
+	_motor->tail_control();/* バランス走行用角度に制御 */
 	act_tsk(BLN_TASK); //バランサ起動
 	act_tsk(BT_LOG);   //ログ起動
-	
-	_motor->tail_control();/* バランス走行用角度に制御 */
 	/**
 	* Main loop for the self-balance control algorithm
 	*/
 	while(!is_finished && !is_error){
-		if (bt_cmd == 2 || runmain->stop_flg == 1) break;
-		//走行処理
-		switch (runmode) {
-			case NORMAL_RUNMODE:
-				fprintf(bt, "%s\r\n", "RunNormal");
-				runmain = new RunNormal(bt_cmd);
-				break;
-			case SEESAW_RUNMODE:
-				fprintf(bt, "%s\r\n", "RunSeesaw");
-				runmain = new RunSeesaw;
-				break;
-			case GATE_RUNMODE:
-				fprintf(bt, "%s\r\n", "RunGate");
-				runmain = new RunGate;
-				break;
-			case GARAGE_RUNMODE:
-				fprintf(bt, "%s\r\n", "RunGarage");
-				runmain = new RunGarage;
-				break;
-			default:
-				fprintf(bt, "%s\r\n", "RunMain");
-				runmain = new RunMain;
-				break;
+		if(runmode_backup != runmode){
+			//走行処理
+			switch (runmode) {
+				case NORMAL_RUNMODE:
+					fprintf(bt, "%s\r\n", "RunNormal");
+					runmain = new RunNormal(course_mode);
+					break;
+				case SEESAW_RUNMODE:
+					fprintf(bt, "%s\r\n", "RunSeesaw");
+					runmain = new RunSeesaw;
+					break;
+				case GATE_RUNMODE:
+					fprintf(bt, "%s\r\n", "RunGate");
+					runmain = new RunGate;
+					break;
+				case GARAGE_RUNMODE:
+					fprintf(bt, "%s\r\n", "RunGarage");
+					runmain = new RunGarage;
+					break;
+				default:
+					fprintf(bt, "%s\r\n", "RunMain");
+					runmain = new RunMain;
+					break;
+			}
+			runmode_backup = runmode;
 		}
+			
 		runmain->run();
+		fputs("runmain_run\r\n",bt);
+		if(runmode != runmode_backup){
+			fputs("delete runmain\r\n",bt);
+			delete runmain;
+			runmain = NULL;
+		}
+		fprintf(bt,"runmode:%d runmode_backup:%d\r\n",runmode ,runmode_backup);
+//		if (bt_cmd == 2 || runmain->stop_flg == 1) break;
 	}
   
-	runmain->stop();
+//	runmain->stop();
 
 	ter_tsk(BT_TASK);
 	ter_tsk(BLN_TASK);
@@ -186,10 +203,10 @@ void bt_task(intptr_t unused){
 			case '2':
 				bt_cmd = 2;
 				break;
-			case 'r':
+			case '3':       //r
 				bt_cmd = 3;
 				break;
-			case 'l':
+			case '4':       //l
 				bt_cmd = 4;
 				break;
 		default:
@@ -206,19 +223,24 @@ void bt_task(intptr_t unused){
 //*****************************************************************************
 void bln_task(intptr_t unused){
 	//セットする値の取得
-	
 	while(1){
 		signed char pwm_L, pwm_R;
 		int32_t motor_ang_l = _motor->getAngle(_motor->left_motor);
 		int32_t motor_ang_r = _motor->getAngle(_motor->right_motor);
 		int gyro = _gyrosensor->getRate();
 		int volt = ev3_battery_voltage_mV();
-		int turn = runmain->getTurn();
-		int forward = runmain->getForward();
+		int turn = 0;
+		int forward = 0;
 		
-		//バランサーに値のセット。回転量の取得
-		balancer.setCommand(forward, turn);
-		balancer.update(gyro, motor_ang_r, motor_ang_l, volt);
+		if(runmain != NULL){
+			turn = runmain->getTurn();
+			forward = runmain->getForward();
+			//バランサーに値のセット。
+			balancer.setCommand(forward, turn);
+			balancer.update(gyro, motor_ang_r, motor_ang_l, volt);
+		}
+		
+		//回転量の取得
 		pwm_L = balancer.getPwmRight();
 		pwm_R = balancer.getPwmLeft();
 		
@@ -252,10 +274,23 @@ void bln_task(intptr_t unused){
 void bt_log(intptr_t unused){
 	
 	fputs("left,right,tail\r\n",bt);
+static int gyro = 0;
 	while(1){
-		
+		gyro += _gyrosensor->getRate();
 		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
-		fprintf(bt,"%d\r\n",_colorsensor->getReflect());
+		//fprintf(bt,"%d,gyro:%d\r\n",_colorsensor->getReflect(),gyro);
+		
+		if(gyro / 20 >= 70 || gyro / 20 <= -70){
+			fprintf(bt,"gyro:%d\r\n",gyro);
+			fprintf(bt, "%s\r\n", "stop");
+			_motor->stop();
+			ter_tsk(BT_TASK);
+			ter_tsk(MAIN_TASK);
+			ter_tsk(BLN_TASK);
+			ext_tsk();
+		}
+		
+		
 		tslp_tsk(250);
 	}
 }

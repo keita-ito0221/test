@@ -22,6 +22,8 @@ public:
 	void tail_up(int up);
 	void tail_down(int down);
 	void tail_save();
+	void rotate(motor_port_t motor ,uint32_t degrees, int power);
+	int getPower(motor_port_t motor);
 	
 
 	static const motor_port_t
