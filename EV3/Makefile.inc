@@ -1,6 +1,7 @@
-APPL_COBJS += balancer.o balancer_param.o
+APPL_COBJS += balancer.o linetrace.o balancer_param.o
 
-APPL_CXXOBJS += BalancerCpp.o \
+APPL_CXXOBJS += LinetraceCpp.o \
+                BalancerCpp.o \
                 Battery.o \
 				ColorSensor.o \
 				GyroSensor.o \

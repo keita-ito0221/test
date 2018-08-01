@@ -63,6 +63,8 @@ TouchSensor *_touchsensor;
 SonarSensor *_sonarsensor;
 #include "BalancerCpp.h" 
 Balancer balancer;
+#include "LinetraceCpp.h" 
+Linetrace linetrace;
 
 //走行を終了する判定フラグ
 bool is_finished = false;   //シーソー、ガレージが終了すればtrueになる。
@@ -128,7 +130,9 @@ void main_task(intptr_t unused){
 	/* ジャイロセンサーリセット */
 	_gyrosensor->reset();
 	balancer.init(GYRO_OFFSET);
-
+	linetrace.init();
+	
+	
 	ev3_led_set_color(LED_GREEN); /* スタート通知 */
 	
 	_motor->tail_control();/* バランス走行用角度に制御 */
@@ -266,6 +270,55 @@ void bln_task(intptr_t unused){
 }
 
 //*****************************************************************************
+// 関数名 : ltr_task
+// 引数 : unused
+// 返り値 : なし
+// 概要 : ライントレースだけを行う。
+//*****************************************************************************
+void ltr_task(intptr_t unused){
+	//セットする値の取得
+	while(1){
+		signed char pwm_L, pwm_R;
+		int32_t motor_ang_l = _motor->getAngle(_motor->left_motor);
+		int32_t motor_ang_r = _motor->getAngle(_motor->right_motor);
+		int volt = ev3_battery_voltage_mV();
+		int turn = 0;
+		int forward = 0;
+		
+		if(runmain != NULL){
+			turn = runmain->getTurn();
+			forward = runmain->getForward();
+			//バランサーに値のセット。
+			linetrace.setCommand(forward, turn);
+			linetrace.update_linetrace(motor_ang_r, motor_ang_l, volt);
+		}
+		
+		//回転量の取得
+		pwm_L = linetrace.getPwmRight();
+		pwm_R = linetrace.getPwmLeft();
+		
+		//左右のモータにセット
+		/* EV3ではモーター停止時のブレーキ設定が事前にできないため */
+		/* 出力0時に、その都度設定する */
+		if (pwm_L == 0){
+			ev3_motor_stop(_motor->left_motor, true);
+		}
+		else{
+			ev3_motor_set_power(_motor->left_motor, (int)pwm_L);
+		}
+		
+		if (pwm_R == 0){
+			ev3_motor_stop(_motor->right_motor, true);
+		}
+		else{
+			ev3_motor_set_power(_motor->right_motor, (int)pwm_R);
+		}
+		
+		tslp_tsk(4);
+	}
+}
+
+//*****************************************************************************
 // 関数名 : bt_log
 // 引数 : unused
 // 返り値 : なし
@@ -274,14 +327,11 @@ void bln_task(intptr_t unused){
 void bt_log(intptr_t unused){
 	
 	fputs("left,right,tail\r\n",bt);
-static int gyro = 0;
 	while(1){
-		gyro += _gyrosensor->getRate();
 		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
 		//fprintf(bt,"%d,gyro:%d\r\n",_colorsensor->getReflect(),gyro);
 		
-		if(gyro / 20 >= 70 || gyro / 20 <= -70){
-			fprintf(bt,"gyro:%d\r\n",gyro);
+		if(!_colorsensor->getReflect()){
 			fprintf(bt, "%s\r\n", "stop");
 			_motor->stop();
 			ter_tsk(BT_TASK);

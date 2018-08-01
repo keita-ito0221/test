@@ -1,0 +1,95 @@
+/******************************************************************************
+ *  LinetraceCpp.cpp (for LEGO Mindstorms EV3)
+ *  Created on: 2015/01/25
+ *  Implementation of the Class Linetrace
+ *  Author: Kazuhiro.Kawachi
+ *  Copyright (c) 2015 Embedded Technology Software Design Robot Contest
+ *****************************************************************************/
+
+#include "linetrace.h"
+
+#include "LinetraceCpp.h"
+
+/**
+ * コンストラクタ
+ */
+Linetrace::Linetrace()
+  : mForward(0),
+    mTurn(0),
+    mRightPwm(0),
+    mLeftPwm(0) {
+}
+
+/**
+ * バランサを初期化する
+ * @param offset ジャイロセンサオフセット値
+ */
+void Linetrace::init() {
+  linetrace_init();  // 倒立振子制御初期化
+}
+
+/**
+ * バックラッシュキャンセル
+ * @note          直近のPWM値に応じてエンコーダ値にバックラッシュ分の値を追加します
+ * @param rwEnc   右車輪エンコーダ値
+ * @param lwEnc   左車輪エンコーダ値
+ * @date          2017/10/24
+ * @auther        Koji SHIMIZU
+ */
+void Linetrace::backlashCanceler(int& rwEnc, int& lwEnc)
+{
+  const int BACKLASHHALF = 2;   // バックラッシュの半分[deg]
+
+  if(mRightPwm < 0) rwEnc += BACKLASHHALF;
+  else if(mRightPwm > 0) rwEnc -= BACKLASHHALF;
+
+  if(mLeftPwm < 0) lwEnc += BACKLASHHALF;
+  else if(mLeftPwm > 0) lwEnc -= BACKLASHHALF;
+}
+
+/**
+ * バランサの値を更新する
+ * @param angle   角速度
+ * @param rwEnc   右車輪エンコーダ値
+ * @param lwEnc   左車輪エンコーダ値
+ * @param battety バッテリ電圧値
+ */
+void Linetrace::update_linetrace(int rwEnc, int lwEnc, int battery) {
+  backlashCanceler(lwEnc, rwEnc); // バックラッシュキャンセル
+  // 倒立振子制御APIを呼び出し、倒立走行するための
+  // 左右モータ出力値を得る
+  linetrace_control(
+     static_cast<float>(mForward),
+     static_cast<float>(mTurn),
+     static_cast<float>(lwEnc),
+     static_cast<float>(rwEnc),
+     static_cast<float>(battery),
+     &mLeftPwm,
+     &mRightPwm);
+}
+
+/**
+ * 前進値、旋回値を設定する
+ * @param forward 前進値
+ * @param turn    旋回値
+ */
+void Linetrace::setCommand(int forward, int turn) {
+  mForward = forward;
+  mTurn    = turn;
+}
+
+/**
+ * 右車輪のPWM値を取得する
+ * @return 右車輪のPWM値
+ */
+int8_t Linetrace::getPwmRight() {
+  return mRightPwm;
+}
+
+/**
+ * 左車輪のPWM値を取得する
+ * @return 左車輪のPWM値
+ */
+int8_t Linetrace::getPwmLeft() {
+  return mLeftPwm;
+}
