@@ -36,7 +36,7 @@ public:
 	int32_t motor_ang_l, motor_ang_r;
 	float target;
 	int stop_flg = 0;
-	//int gray_flg;                     /////////////////////////////
+	int gray_flg;                     /////////////////////////////
 	
 	int colorlist[10];
 	int cnt;

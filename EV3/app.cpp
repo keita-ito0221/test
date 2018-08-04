@@ -68,6 +68,8 @@ Balancer balancer;
 bool is_finished = false;   //シーソー、ガレージが終了すればtrueになる。
 bool is_error    = false;   //続行不可
 
+static int turn = 0;
+
 int runmode = NORMAL_RUNMODE;
 
 /* メインタスク */
@@ -226,11 +228,11 @@ void bln_task(intptr_t unused){
 		int32_t motor_ang_r = _motor->getAngle(_motor->right_motor);
 		int gyro = _gyrosensor->getRate();
 		int volt = ev3_battery_voltage_mV();
-		int turn = 0;
+		
 		int forward = 0;
 		
 		if(runmain != NULL){
-			turn = runmain->getTurn();
+			turn = -10;//runmain->getTurn();
 			forward = runmain->getForward();
 			//バランサーに値のセット。
 			balancer.setCommand(forward, turn);
@@ -269,10 +271,9 @@ void bln_task(intptr_t unused){
 // 概要 : Bluetooth通信によるログを取得する。
 //*****************************************************************************
 void bt_log(intptr_t unused){
-	
-	fputs("left,right,tail\r\n",bt);
+	fputs("right,left,ref,turn\r\n",bt);
 	while(1){
-		//fprintf(bt, "%d,%d,%d\r\n", int(_motor->getAngle(_motor->left_motor)),int(_motor->getAngle(_motor->right_motor)),int(_motor->getAngle(_motor->tail_motor)));
+		fprintf(bt, "%d,%d,%d,%d\r\n", int(balancer.getPwmRight()),int(balancer.getPwmLeft()),_colorsensor->getReflect(),turn);
 		//fprintf(bt,"%d,gyro:%d\r\n",_colorsensor->getReflect(),gyro);
 		
 		if(!_colorsensor->getReflect()){

@@ -118,16 +118,16 @@ void RunMain::find_gray(int color){
 	}	
 	//配列の中に8つ灰色の値があれば灰色のライン上にいるとする
 	if(graycnt >= 8){
-		//gray_flg++;
-		//if(gray_flg >= 15){                                     /////////////////////////////////////////
+		gray_flg++;
+		if(gray_flg >= 15){                                     /////////////////////////////////////////
 			ev3_speaker_play_tone(NOTE_C4, 250);
-			//fprintf(bt,"gray_flg:%d\r\n",gray_flg);
-		//}
+			fprintf(bt,"gray_flg:%d\r\n",gray_flg);
+		}
 		line_color = MODE_GRAY;
 	}
 	else{
 		line_color = MODE_BLACK;
-		//gray_flg = 0;
+		gray_flg = 0;
 	}
 	
 	//黒色を検知したらMODE_BLACKに切り替える

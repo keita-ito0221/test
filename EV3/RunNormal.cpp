@@ -17,8 +17,17 @@ extern Motor motor;
  */
 RunNormal::RunNormal(int course)
 {
+	for(int i = 0;i<10;i++){
+		tA_r[i] = 0;
+		tA_l[i] = 0;
+	}
+	for(int i = 0;i<8;i++){
+		tAve[i] = 0;
+	}
+	i = k = Tcnt = 0;
+	
 	sts = 1;
-	speed = 60;
+	speed = 30;
 
 	if( (course != R_COURSE) && (course != L_COURSE)){
 		is_error = 1;
@@ -56,36 +65,43 @@ void RunNormal::R_Course_Run(){
 	switch(sts){
 	case 1:
 		//スタートしてから左に曲がり始めたら
-		//if(motor.getTurnAngle(motor.left_motor,motor.right_motor) <= 100){   //右タイヤが左タイヤのモータの回転数が１００くらいの差が出たら
-			//sts = 2;
-		//}
-		sts = 2;
+		if(TurnDetection(13.5,14.0)){   //右タイヤが左タイヤのモータの回転数が１００くらいの差が出たら
+			//fputs("sts:1\r\n",bt);
+			sts = 2;
+		}
 		break;
 	case 2:
 		//真っ直ぐに戻り始めたら
-		//if(getTurn()) break;
+		//if(getTurn()  <= 真っ直ぐのときのturn) break;
 		sts = 3;
 		break;
 	case 3:
-		//真っ直ぐ進んでいる途中で左に曲がり始めたら
+		if(motor.getTurnAngle(motor.right_motor,motor.left_motor) <= 100){   //真っ直ぐ進んでいる途中で左に曲がり始めたら
+			//fputs("sts:3\r\n",bt);
 		sts = 4;
+		}
 		break;
 	case 4:
 		//真っ直ぐに戻り始めたら
 		sts = 5;
 		break;
 	case 5:
-		//真っ直ぐ進んでいる途中で右に曲がり始めたら
+		if(motor.getTurnAngle(motor.left_motor,motor.right_motor) <= 100){	//真っ直ぐ進んでいる途中で右に曲がり始めたら
+			//fputs("sts:5\r\n",bt);
 		sts = 6;
+		}
 		break;
 	case 6:
 		//真っ直ぐに戻り始めたら
 		sts = 7;
 		break;
 	case 7:
-		//距離、秒数が一定の値に達し、左に曲がり始めたら(左カーブのみ)
+		if(motor.getTurnAngle(motor.right_motor,motor.left_motor) <= 100){	//距離、秒数が一定の値に達し、左に曲がり始めたら(左カーブのみ)
+			//fputs("sts:7\r\n",bt);
 		sts = 8;
+		}
 		break;
+	#if 0
 	case 8:
 		//真っ直ぐに戻り始め、灰色を検知したら
 		if(line_color == MODE_GRAY){
@@ -106,6 +122,7 @@ void RunNormal::R_Course_Run(){
 			runmode =  SEESAW_RUNMODE;
 		}
 		break;
+	#endif
 	}
 }
 
@@ -152,4 +169,43 @@ void RunNormal::L_Course_Run(){
 	break;
 	}
 	
+}
+
+int RunNormal::TurnDetection(float min, float max) {
+
+  	
+     if(i == 10){
+       i=0;
+     }
+     if( k == 8){
+       k=0;
+     }
+     AR = 0.0;
+     AL = 0.0;
+     tA_r[i] = pwm_R;
+     tA_l[i] = pwm_L;
+     for(int j = 0;j<10;j++){
+       AR = AR + tA_r[j];
+       AL = AL + tA_l[j];
+     }
+   AR = (AR/10);
+   AL = (AL/10);
+   printf("AR:%f\n",AR);
+   
+   tAve[k] = AR - AL;
+   printf("Ave:[%f]\n",tAve[k]);
+   for(int j=0;j<8;j++){
+       if((tAve[j]>=min) && (tAve[j]<=max)){
+         Tcnt++;
+       }
+    }
+    if(Tcnt >= 8){
+       return 1;
+    }else{
+      Tcnt = 0;
+    }
+    i++;
+    k++;
+	return 0;
+  
 }
