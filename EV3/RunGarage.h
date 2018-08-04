@@ -11,6 +11,7 @@ class RunGarage : public RunMain
 {
 public:
 	RunGarage();
+	virtual ~RunGarage();
 	void run();
 	int sts;
 

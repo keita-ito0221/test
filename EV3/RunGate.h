@@ -11,6 +11,7 @@ class RunGate : public RunMain
 {
 public:
 	RunGate();
+	virtual ~RunGate();
 	void run();
 	int ObstacleDetection(int _distance);
 

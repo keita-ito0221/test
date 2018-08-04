@@ -21,6 +21,13 @@ RunGarage::RunGarage()
 }
 
 /**
+ * デストラクタ
+ */
+RunGarage::~RunGarage()
+{
+}
+
+/**
 *処理開始
 */
 void RunGarage::run() {

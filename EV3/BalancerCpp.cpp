@@ -40,7 +40,7 @@ void Balancer::init(int offset) {
  */
 void Balancer::backlashCanceler(int& rwEnc, int& lwEnc)
 {
-  const int BACKLASHHALF = 4;   // バックラッシュの半分[deg]
+  const int BACKLASHHALF = 2;   // バックラッシュの半分[deg]
 
   if(mRightPwm < 0) rwEnc += BACKLASHHALF;
   else if(mRightPwm > 0) rwEnc -= BACKLASHHALF;

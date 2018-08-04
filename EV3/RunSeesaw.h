@@ -11,6 +11,7 @@ class RunSeesaw : public RunMain
 {
 public:
 	RunSeesaw();
+	virtual ~RunSeesaw();
 	void run();
 	int left_motor_count;
 	int right_motor_count;

@@ -16,22 +16,33 @@ ColorSensor colorsensor;
 
 extern FILE *bt;
 
+#define LOOP_CNT 10
+#define LOOP_SPAN 3
+
 /**
  * コンストラクタ
  */
 RunMain::RunMain()
 {
+	//gray_flg = 0;                       /////////////////////////////
 	target = setTarget();
 	pid = new PID();
 	
-	for(int i=0;i<10;i++){
+	for(int i=0;i<LOOP_CNT;i++){
 	   colorlist[i]=0;
 	}
 	cnt = -1000;
 	flg = false;
-	ev3_speaker_set_volume(20);
+	ev3_speaker_set_volume(1);
 }
 
+
+/**
+ * デストラクタ
+ */
+RunMain::~RunMain()
+{
+}
 /*
 targetの値を取得する
 */
@@ -42,7 +53,7 @@ float RunMain::setTarget(){
 	else{
 		target = (LIGHT_WHITE + LIGHT_GRAY)/2;
 	}
-	fprintf(bt, "%d\r\n", line_color);
+	//fprintf(bt, "%d\r\n", line_color);
 	return target;
 }
 
@@ -63,13 +74,13 @@ int RunMain::getTurn(){
 	fprintf(bt, "%s\r\n", "cnt");
 	fprintf(bt, "%d\r\n", cnt);*/
 	
-	fprintf(bt, "%d,%d\r\n", color,cnt);
-	if(cnt>=40){
+	//fprintf(bt, "%d,%d\r\n", color,cnt);
+	if(cnt>=LOOP_CNT * LOOP_SPAN){
 		cnt = 0;
 	}
 	
-	if((cnt > 0) && (cnt % 4 == 0)){
-		colorlist[cnt/4] = color;
+	if((cnt > 0) && (cnt % LOOP_SPAN == 0)){
+		colorlist[cnt/LOOP_SPAN] = color;
 	    find_gray(color);
 	}
 	
@@ -84,22 +95,39 @@ int RunMain::getTurn(){
 void RunMain::find_gray(int color){
 	//灰色を検知したらMODE_GRAYに切り替える
 	int graycnt = 0;
-	
+	if((color >= 25) && (color <= 35)){
+		//fprintf(bt,"color:%d\r\n",color);
+	}
 	//灰色の閾値を設定
 	//取得した色の値を配列に格納する
-	for(int i=0;i<6;i++){
-		if((colorlist[i]>=20) && (colorlist[i]<=40)){
+	for(int i=0;i<LOOP_CNT;i++){
+		if((colorlist[i]>=25) && (colorlist[i]<=35)){
 			graycnt++;
 		}
-		else{
-			line_color = MODE_BLACK;
-		}
+//		else{
+//			line_color = MODE_BLACK;
+//		}
 	}
-	
+
+	if(color < 20){
+		line_color = MODE_BLACK;
+		graycnt = 0;
+		for(int i = 0; i<LOOP_CNT; i++){
+			colorlist[i] = 0;	// 初期化
+		}
+	}	
 	//配列の中に8つ灰色の値があれば灰色のライン上にいるとする
-	if(graycnt >= 5){
-		ev3_speaker_play_tone(NOTE_C4, 1000);
+	if(graycnt >= 8){
+		//gray_flg++;
+		//if(gray_flg >= 15){                                     /////////////////////////////////////////
+			ev3_speaker_play_tone(NOTE_C4, 250);
+			//fprintf(bt,"gray_flg:%d\r\n",gray_flg);
+		//}
 		line_color = MODE_GRAY;
+	}
+	else{
+		line_color = MODE_BLACK;
+		//gray_flg = 0;
 	}
 	
 	//黒色を検知したらMODE_BLACKに切り替える

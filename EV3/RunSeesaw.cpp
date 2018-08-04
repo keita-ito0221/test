@@ -36,7 +36,7 @@ RunSeesaw::RunSeesaw()
 {	
 	left_motor_count = 0;
 	right_motor_count = 0;
-	for(int i = 0; i <= 1;i++){
+	for(int i = 0; i <= 1; i++){
 		array[i] = 0;
 		left_count[i] = 0;
 		right_count[i] = 0;
@@ -44,6 +44,13 @@ RunSeesaw::RunSeesaw()
 	left_angle = 0;
 	right_angle = 0;
 	power = 0;
+}
+
+/**
+ * デストラクタ
+ */
+RunSeesaw::~RunSeesaw()
+{
 }
 
 /**

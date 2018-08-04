@@ -9,7 +9,7 @@
 //#define GYRO_OFFSET  0       /* ジャイロセンサオフセット値(角速度0[deg/sec]時) */
 #define LIGHT_WHITE  60         /* 白色の光センサ値 */
 #define LIGHT_BLACK  0          /* 黒色の光センサ値 */
-#define LIGHT_GRAY   50         /* 灰色の光センサ値 */
+#define LIGHT_GRAY   40         /* 灰色の光センサ値 */
 
 #define MODE_BLACK	0		/* 黒色のライントレース */
 #define MODE_GRAY	1		/* 灰色のライントレース */
@@ -21,6 +21,7 @@ class RunMain
 {
 public:
 	RunMain();
+	virtual ~RunMain();
 	void init();
 	virtual void run();
 	int getTurn();
@@ -34,8 +35,9 @@ public:
 	int gyro, volt;
 	int32_t motor_ang_l, motor_ang_r;
 	float target;
-	int stop_flg;
-
+	int stop_flg = 0;
+	//int gray_flg;                     /////////////////////////////
+	
 	int colorlist[10];
 	int cnt;
 	bool flg;
