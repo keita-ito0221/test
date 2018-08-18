@@ -109,13 +109,6 @@ void Motor::tail_down(int down) {
 }
 
 /*
-* 尻尾を固定
-*/
-void Motor::tail_save() {
-	ev3_motor_rotate(tail_motor, 0, PWM_ABS_MAX, true);
-}
-
-/*
  *タイヤを指定した角度回転させる
  */
 void Motor::rotate(motor_port_t motor ,uint32_t degrees, int power) {

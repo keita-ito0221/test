@@ -93,7 +93,6 @@ extern void bt_log(intptr_t exinf);
 #endif
 
 extern int runmode;
-extern signed char pwm_L, pwm_R;
 typedef enum {
 		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
 		SEESAW_RUNMODE = 1, //シーソー

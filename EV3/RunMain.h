@@ -28,7 +28,13 @@ public:
 	int getForward();
 	void move(int);
 	void stop();
-	
+	void find_gray(int color);
+	float setTarget();				//トレース目標値設定
+	int line_color;					//どの色のライン上をトレースするか
+
+
+
+private:
 	int forward = 0;      /* 前後進命令 */
 	int turn = 0;         /* 旋回命令 */
 	int pwm_L, pwm_R; /* 左右モータPWM出力 */
@@ -36,18 +42,10 @@ public:
 	int32_t motor_ang_l, motor_ang_r;
 	float target;
 	int stop_flg = 0;
-	int gray_flg;                     /////////////////////////////
-	
 	int colorlist[10];
 	int cnt;
 	bool flg;
-	
-	void find_gray(int color);
 	int trace_mode = MODE_BLACK;	//スタート直後のモード
-	int line_color;					//どの色のライン上をトレースするか
-	float setTarget();				//トレース目標値設定
-
-private:
 
 };
 

@@ -13,6 +13,8 @@ public:
 	RunSeesaw();
 	virtual ~RunSeesaw();
 	void run();
+
+private:
 	int left_motor_count;
 	int right_motor_count;
 	int array[2];
@@ -21,8 +23,6 @@ public:
 	int power;
 	int left_count[2];
 	int right_count[2];
-
-private:
 
 };
 

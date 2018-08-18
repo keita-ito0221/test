@@ -13,10 +13,10 @@ public:
 	RunGarage();
 	virtual ~RunGarage();
 	void run();
-	int sts;
+	
 
 private:
-
+	int sts;
 };
 
 #endif

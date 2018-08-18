@@ -20,17 +20,8 @@ public:
 	void run();
 	void R_Course_Run();
 	void L_Course_Run();
-	int TurnDetection(float min,float max);
 	
 private:
-	
-	float tA_r[10];
-	float tA_l[10];
-	float tAve[8];
-	float AR,AL;
-	int i,k;
-	int Tcnt;
-	
 	int sts;
 	int speed;
 	int m_course;
