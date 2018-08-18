@@ -14,16 +14,28 @@ SonarSensor sonarsensor;
 #include "Motor.h"
 extern Motor motor;
 
-#define PASS            35//ゲートの通過距離
-#define TURN            51//ターンの距離
+#define PASS            35 //ゲートの通過距離
+#define HALF_TURN       51 //半回転の距離
+#define TURN            51 //全回転の距離
 
-#define STS_GATE_DETE	0 //障害物のゲートを検知
-#define STS_GATE_TILT	1 //ゲートを潜れる高さまで走行体を下げる
-#define STS_GATE_RESE	2 //タイヤモータの角位置をリセット
-#define STS_GATE_PASS	3 //ゲート通過
-#define STS_GATE_VERT	4 //走行体を垂直に近づける
-#define STS_GATE_TURN	5 //走行体を回転させる
-#define STS_GATE_FINI	6 //走行体を停止させる
+#define LEFT_TURN       1  //ライン発見時の状態
+#define RIGHT_TURN      2  //
+
+
+
+#define STS_GATE_DETE	0  //ゲートを検知
+#define STS_GATE_INIT	1  //ゲートモード初期化
+#define STS_GATE_LINE	2  //ライン検索
+#define STS_GATE_CENT	3  //走行体中心移動
+#define STS_GATE_FORW	4  //直進検索
+#define STS_GATE_DIRE	5  //進行方向確認
+#define STS_GATE_FLIP	6  //反転
+#define STS_GATE_TILT	7  //ゲートを潜れる高さまで走行体を倒す
+#define STS_GATE_RESE	8  //タイヤモータの角位置をリセット
+#define STS_GATE_PASS	9  //ゲート通過
+#define STS_GATE_VERT	10 //走行体を垂直に近づける
+#define STS_GATE_TURN	11 //走行体を回転させる
+#define STS_GATE_FINI	12 //走行体を停止させる
 
 /**
  * コンストラクタ
@@ -32,6 +44,14 @@ RunGate::RunGate()
 {
 	flg = 0;
 	sts = 0;
+	turn_flg = 0;
+}
+
+/**
+ * デストラクタ
+ */
+RunGate::~RunGate()
+{
 }
 
 /**
@@ -54,23 +74,124 @@ RunGate::RunGate()
 void RunGate::run() {
 	while(1){
 		switch(sts){
-		case STS_GATE_DETE:                                     /**障害物**/
+		case STS_GATE_DETE:                                     /**ゲートを検知**/
 			move(60);
-			if(ObstacleDetection(10)){                          //20cm以内に障害物があれば処理
+			if(ObstacleDetection(10)){                      //10cm以内に障害物があれば処理
 				fputs("sonar\r\n",bt);
-				ter_tsk(BLN_TASK);                              //バランサ停止
-				ev3_motor_set_power(motor.left_motor, 40);      //車体が倒れないようにバランサを止めて少し前に進む
-				ev3_motor_set_power(motor.right_motor, 40);
-				motor.tail_down(80);                            //尻尾を下ろす
-				stop();                                         //走行体停止
-				sts = STS_GATE_TILT;
+				sts = STS_GATE_INIT;
 			}
+			break;
+			
+		case STS_GATE_INIT:                                     /**ゲートモード初期化**/
+			fputs("init\r\n",bt);
+			ter_tsk(BLN_TASK);                              //バランサ停止
+			ev3_motor_set_power(motor.left_motor, 40);      //車体が倒れないようにバランサを止めて少し前に進む
+			ev3_motor_set_power(motor.right_motor, 40);
+			motor.tail_down(80);                            //尻尾を下ろす
+			stop();                                         //走行体停止
+			sts = STS_GATE_LINE;
+			break;
+			
+		case STS_GATE_LINE:                                     /**ライン検索**/
+			fputs("line\r\n",bt);
+			motor.reset(motor.left_motor);                  //モータの回転数の初期化
+			motor.reset(motor.right_motor);
+			motor.setMovedistance(TURN);
+			while(motor.getTurnAngle(motor.right_motor,motor.left_motor) >= motor.getMovedistance()){
+				fputs("line_L\r\n",bt);
+				ev3_motor_set_power(motor.left_motor, 0);   //左回りライン検索
+				ev3_motor_set_power(motor.right_motor, 10);
+				if(color <= 2 ){
+					sts = STS_GATE_CENT;
+					turn_flg = LEFT_TURN;
+					break;
+				}
+			}
+			motor.reset(motor.left_motor);                  //モータの回転数の初期化
+			motor.reset(motor.right_motor);
+			while(motor.getTurnAngle(motor.left_motor,motor.right_motor) >= motor.getMovedistance()){
+				fputs("line_R\r\n",bt);
+				ev3_motor_set_power(motor.left_motor, 10);  //右回りライン検索
+				ev3_motor_set_power(motor.right_motor, 0);
+				if(color <= 2 ){
+					sts = STS_GATE_CENT;
+					turn_flg = RIGHT_TURN;
+					break;
+				}
+			}
+			
+			break;
+		
+		case STS_GATE_CENT:                                     /**走行体中心移動**/
+			fputs("center\r\n",bt);
+			motor.reset(motor.left_motor);                  //モータの回転数の初期化
+			motor.reset(motor.right_motor);
+			motor.setMovedistance(0);                       //3cm前に移動
+			while(motor.getAveAngle() >= motor.getMovedistance()){
+				ev3_motor_set_power(motor.left_motor, 10);  //直進
+				ev3_motor_set_power(motor.right_motor, 10);
+			}
+			sts = STS_GATE_FORW;
+			break;
+			
+		case STS_GATE_FORW:                                     /**直進検索**/
+			fputs("forward\r\n",bt);
+			motor.reset(motor.left_motor);                  //モータの回転数の初期化
+			motor.reset(motor.right_motor);
+			if(turn_flg == LEFT_TURN){
+				while(motor.getTurnAngle(motor.left_motor,motor.right_motor) >= motor.getMovedistance()){
+					ev3_motor_set_power(motor.left_motor, 10);  //右回りライン検索
+					ev3_motor_set_power(motor.right_motor, -10);
+					if(color <= 28 ){
+						sts = STS_GATE_DIRE;
+						break;
+					}
+				}
+			}else if(turn_flg == RIGHT_TURN){
+				while(motor.getTurnAngle(motor.right_motor,motor.left_motor) >= motor.getMovedistance()){
+					ev3_motor_set_power(motor.left_motor, -10);   //左回りライン検索
+					ev3_motor_set_power(motor.right_motor, 10);
+					if(color <= 28 ){
+						sts = STS_GATE_DIRE;
+						break;
+					}
+				}
+			}
+			break;
+			
+		case STS_GATE_DIRE:                                     /**進行方向確認**/
+			fputs("directiont\r\n",bt);
+			if(ObstacleDetection(10)){                       //正面にゲートがあるか
+				sts = STS_GATE_TILT;
+			}else{
+				sts = STS_GATE_FLIP;
+			}
+			break;
+			
+		case STS_GATE_FLIP:                                     /**反転**/
+			fputs("flip\r\n",bt);
+			motor.reset(motor.left_motor);                  //モータの回転数の初期化
+			motor.reset(motor.right_motor);
+			motor.setMovedistance(HALF_TURN);
+			if(turn_flg == LEFT_TURN){
+				while(motor.getTurnAngle(motor.left_motor,motor.right_motor) >= motor.getMovedistance()){
+					ev3_motor_set_power(motor.left_motor, 10);  //右回りライン検索
+					ev3_motor_set_power(motor.right_motor, -10);
+				}
+			}else if(turn_flg == RIGHT_TURN){
+				while(motor.getTurnAngle(motor.right_motor,motor.left_motor) >= motor.getMovedistance()){
+					ev3_motor_set_power(motor.left_motor, -10); //左回りライン検索
+					ev3_motor_set_power(motor.right_motor, 10);
+
+				}
+			}
+			sts = STS_GATE_DIRE;
 			break;
 			
 		case STS_GATE_TILT:                                     /**走行体を傾ける**/
 			fputs("tilt\r\n",bt);
 			while(motor.getAngle(motor.tail_motor) >= 65){      //尻尾を65になるまで上げる
-				motor.tail_up(-1);                              //尻尾を上げる
+				motor.tail_up(1);                              //尻尾を上げる
 				tslp_tsk(10);
 			}
 			sts = STS_GATE_RESE;
@@ -129,7 +250,7 @@ void RunGate::run() {
 		}
 		if(sts == STS_GATE_FINI){                               //終了
 			fputs("finish\r\n",bt);
-			stop_flg = 1;                                       //stop_flgをapp.cppに渡す 1:終了
+			runmode = GARAGE_RUNMODE;
 			break;
 		}
 	}

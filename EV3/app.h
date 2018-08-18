@@ -91,3 +91,12 @@ extern void bt_log(intptr_t exinf);
 #ifdef __cplusplus
 }
 #endif
+
+extern int runmode;
+typedef enum {
+		NORMAL_RUNMODE = 0, //通常走行（ライントレース）
+		SEESAW_RUNMODE = 1, //シーソー
+		GATE_RUNMODE   = 2, //ルックアップゲート
+		GARAGE_RUNMODE = 3, //車庫入れ
+		NO_RUNMODE     = 99, //未走行状態
+	} run_mode_t;

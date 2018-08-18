@@ -3,16 +3,12 @@
  */
 #ifndef PID_H_
 #define PID_H_
-
-#define KP  0.80
-#define KI  0.0405 
-#define KD  0.038
 	
 class PID
 {
 public:
 	PID();
-	int calcControllValue(int);
+	int calcControllValue(int,int);
 
 private:
 	int math_limit(int,int,int);

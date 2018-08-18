@@ -11,12 +11,14 @@ class RunGate : public RunMain
 {
 public:
 	RunGate();
+	virtual ~RunGate();
 	void run();
 	int ObstacleDetection(int _distance);
 
 private:
 	int flg;
 	int sts;
+	int turn_flg;
 };
 
 #endif
